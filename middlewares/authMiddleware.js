@@ -1,8 +1,12 @@
 const jwt = require('jsonwebtoken');
 const userModel = require('../models/userModel');
 
+const generateToken = (user_id) => {
+    return jwt.sign({ user_id }, process.env.JWT_SECRET_KEY, { expiresIn: '1d' });
+};
+
 const checkUserAuth = async (req, res, next) => {
-    let token
+    let token;
     const { authorization } = req.headers
     if (authorization && authorization.startsWith('Bearer')) {
         try {
@@ -14,7 +18,8 @@ const checkUserAuth = async (req, res, next) => {
             // Get User from Token
             req.user = await userModel.findById(user_id).select('-password')
 
-            next()
+            next();
+
         } catch (error) {
             console.log(error)
             res.status(401).send({
@@ -22,14 +27,12 @@ const checkUserAuth = async (req, res, next) => {
                 message: "Unauthorized User"
             })
         }
-    }
-    if (!token) {
+    } else {
         res.status(401).send({
             status: "fail",
             message: "Token is required for authorized user"
-        })
+        });
     }
-
 }
 
-module.exports = checkUserAuth
+module.exports = { checkUserAuth, generateToken }
